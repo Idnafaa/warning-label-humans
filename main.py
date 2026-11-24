@@ -22,21 +22,39 @@ LABEL = (
     "not its fault."
 )
 
+MAX_CHARS = 160
+
+
+def validate(label: str) -> str:
+    """Check the label the way the gate does, and fail loudly if it is off.
+
+    Returns the label unchanged when it passes: one line, 1 to 160
+    characters, not only white space, in the voice of a printed warning.
+    """
+    if not label or label.strip() == "":
+        raise ValueError("label must not be blank")
+    if "\n" in label or "\r" in label:
+        raise ValueError("label must be a single line")
+    if len(label) > MAX_CHARS:
+        raise ValueError(f"label is {len(label)} characters, over {MAX_CHARS}")
+    if not label.startswith("WARNING:"):
+        raise ValueError("label must read like a printed warning label")
+    return label
+
 
 def main() -> int:
-    if not (1 <= len(LABEL) <= 160):
-        print(f"label is {len(LABEL)} characters, must be 1-160", file=sys.stderr)
-        return 1
-    if "\n" in LABEL or "\r" in LABEL:
-        print("label must be a single line", file=sys.stderr)
+    try:
+        label = validate(LABEL)
+    except ValueError as exc:
+        print(f"invalid label: {exc}", file=sys.stderr)
         return 1
 
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
     os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, "entry.txt")
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
-        fh.write(LABEL + "\n")
-    print(f"wrote {len(LABEL)} characters to {path}")
+        fh.write(label + "\n")
+    print(f"wrote {len(label)} characters to {path}")
     return 0
 
 
